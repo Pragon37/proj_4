@@ -1,0 +1,3 @@
+*.swp
+env/
+database/__pycache__/
