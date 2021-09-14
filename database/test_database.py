@@ -45,6 +45,9 @@ insert_competitor(2, 15)
 insert_competitor(2, 16)
 insert_competitor(2, 17)
 
+print(3 * '\n')
+insert_competitor(1, 1)
+print(3 * '\n')
 
 x = c.execute("SELECT player_id, first_name, last_name, birth_date, sex, ranking FROM player WHERE player_id == 8")
 print(x.fetchone())
@@ -54,10 +57,25 @@ x = c.execute("SELECT player_id, first_name, last_name, birth_date, sex, ranking
 print(x.fetchone())
 
 
-insert_match('tie', 1 , 1, 7, 2)
-insert_match('player2', 1, 1, 3, 4)
-insert_match('player1', 1, 1, 3, 9)  # to be flagged (outside existing data)
-insert_match('player1', 1, 1, 5, 5) # to be flagged
+insert_match('tie', 1, 1, 7, 2)
+insert_match('pl2', 1, 1, 3, 4)
+insert_match('pl1', 1, 1, 6, 9)
+insert_match('pl1', 1, 1, 5, 8)
+
+insert_match('pl1', 2, 1, 7, 3)
+insert_match('pl1', 2, 1, 2, 4)
+insert_match('pl2', 2, 1, 6, 5)
+insert_match('pl2', 2, 1, 9, 8)
+
+insert_match('pl2', 3, 1, 7, 8)
+insert_match('tie', 3, 1, 3, 9)
+insert_match('tie', 3, 1, 6, 4)
+insert_match('pl1', 3, 1, 5, 2)
+
+insert_match('tie', 4, 1, 7, 9)
+insert_match('tie', 4, 1, 3, 8)
+insert_match('pl2', 4, 1, 6, 2)
+insert_match('pl1', 4, 1, 5, 4)
 
 y = c.execute("SELECT match_id FROM  matches ")
 print(y.fetchall())
@@ -75,3 +93,26 @@ display_ranked_player()
 
 display_player(QUERY_COMPETITORS.replace('num', str(2)))
 display_ranked_player(QUERY_RANKED_COMPETITORS.replace('num', str(1)))
+
+insert_tour('Paris_21','Paris','2021-06-01')
+insert_tour('Rome_21','Rome','2021-05-01')
+insert_tour('London_21','London','2021-04-01')
+insert_tour('Berlin_21','Berlin','2021-03-01')
+insert_tour('Zurich_21','Zurich','2021-02-01')
+
+display_tour()
+
+print(3 * '\n')
+display_round(QUERY_ROUNDS.replace('tour_num', str(1)).replace('round_num', str(1)))
+
+print(3 * '\n')
+display_round(QUERY_ROUNDS.replace('tour_num', str(1)).replace('round_num', str(2)))
+
+print(3 * '\n')
+display_round(QUERY_ROUNDS.replace('tour_num', str(1)).replace('round_num', str(3)))
+
+print(3 * '\n')
+display_round(QUERY_ROUNDS.replace('tour_num', str(1)).replace('round_num', str(4)))
+
+print(3 * '\n')
+display_match(QUERY_MATCHES.replace('tour_num', str(1)))

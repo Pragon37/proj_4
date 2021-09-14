@@ -44,7 +44,8 @@ def insert_competitor(tour_id, player_id):
         try:
             c.execute("INSERT INTO competitors VALUES (NULL, :tour_id, :player_id)",
                       {'tour_id': tour_id, 'player_id': player_id})
-        except:
+        except sqlite3.IntegrityError as error:
+            print('sqlite3.IntegrityError', error)
             get_player_name(player_id, tour_id)
 
 
@@ -55,13 +56,13 @@ def get_player_name(player_id, tour_id):
     print(' '.join(name.fetchone()), ": Player already enrolled in tour : ", tour_id)
 
 
-"""matches table records 2 players enaged in a match and the match result (tie,player1,player2).
+"""matches table records 2 players enaged in a match and the match result (TIE,PL1,PL2).
    Parent table : tournaments, player."""
 
 c.execute("""CREATE TABLE matches (
             match_id    INTEGER PRIMARY KEY,
             result      TEXT NOT NULL,
-            xound       INTEGER NOT NULL,
+            round       INTEGER NOT NULL,
             tour_id     INTEGER  NOT NULL REFERENCES tournaments(tour_id),
             player1_id  INTEGER  NOT NULL REFERENCES player(player_id),
             player2_id  INTEGER  NOT NULL REFERENCES player(player_id)
@@ -88,12 +89,11 @@ c.execute("""CREATE TABLE tournaments (
             )""")
 
 
-def insert_tour(tour_id, name, venue, date):
+def insert_tour(name, venue, date):
     """insert a tournament in the tournaments table"""
     with conn:
-        c.execute("INSERT INTO matches VALUES (NULL, :name, :venue, :tour_id, :date)",
-                  {'tour_id': tour_id,
-                   'name': name,
+        c.execute("INSERT INTO tournaments VALUES (NULL, :name, :venue, :date)",
+                  {'name': name,
                    'venue': venue,
                    'date': date})
 
@@ -128,11 +128,11 @@ def display_player(query=QUERY_PLAYERS):
     """print (all) the player list sorted by name"""
     with conn:
         name = c.execute(query)
-        print(27 * '-')
-        print('{0:<16s}{1:<16s}'.format('Last Name', 'First Name'))
-        print(27 * '-')
+        print(25 * '-')
+        print('{0:<20s}'.format('Player'))
+        print(25 * '-')
         for last_first in (name.fetchall()):
-            print('{0:<16s} {1:<16s}'.format(last_first[0], last_first[1]))
+            print('{0:<20s}'.format(' '.join(last_first[0:2])))
 
 
 def display_ranked_player(query=QUERY_RANKED_PLAYERS):
@@ -140,7 +140,72 @@ def display_ranked_player(query=QUERY_RANKED_PLAYERS):
     with conn:
         name = c.execute(query)
         print(40 * '-')
-        print('{0:<16s}{1:<16s}{2:<4s}'.format('Last Name', 'First Name', 'Ranking'))
+        print('{0:<20s}{1:<4s}'.format('Player', 'Ranking'))
         print(40 * '-')
         for last_first_rank in (name.fetchall()):
-            print('{0:<16s} {1:<16s} {2:<4d}'.format(last_first_rank[0], last_first_rank[1], last_first_rank[2]))
+            print('{0:<20s}{1:<4d}'.format(' '.join(last_first_rank[0:2]), last_first_rank[2]))
+
+
+"""Query to get all the recorded tournaments"""
+QUERY_TOURS = """SELECT name, venue, date
+                   FROM tournaments
+                   ORDER BY date"""
+
+
+def display_tour(query=QUERY_TOURS):
+    """print (all) the tournaments sorted by date"""
+    with conn:
+        name = c.execute(query)
+        print(37 * '-')
+        print('{0:<16s}{1:<16s}{2:<16s}'.format('Name', 'Venue', 'Date'))
+        print(37 * '-')
+        for tour in (name.fetchall()):
+            print('{0:<16s} {1:<16s}{2:<16s}'.format(tour[0], tour[1], tour[2]))
+
+
+QUERY_ROUNDS = """SELECT result, player1.first_name, player1.last_name, player2.first_name, player2.last_name
+                  FROM
+                  matches
+                  JOIN player AS player1 ON player1.player_id = matches.player1_id
+                  JOIN player AS player2 ON player2.player_id = matches.player2_id
+                  WHERE matches.tour_id = tour_num AND matches.round = round_num
+                  """
+
+
+def display_round(query=QUERY_ROUNDS):
+    """print all matches results and contestants in a round"""
+    print(50 * '-')
+    print('{0:<10s}{1:<20s}{2:<20s}'.
+          format('Result', 'Player1', 'Player2'))
+    print(50 * '-')
+    with conn:
+        result = c.execute(query)
+        for round in (result.fetchall()):
+            print('{0:<10s}{1:<20s}{2:<20s}'.format(round[0], ' '.join(round[1:3]), ' '.join(round[3:5])))
+
+
+QUERY_MATCHES = """SELECT round,
+                   result,
+                   player1.first_name,
+                   player1.last_name,
+                   player2.first_name,
+                   player2.last_name
+                  FROM
+                  matches
+                  JOIN player AS player1 ON player1.player_id = matches.player1_id
+                  JOIN player AS player2 ON player2.player_id = matches.player2_id
+                  WHERE matches.tour_id = tour_num
+                  """
+
+
+def display_match(query=QUERY_MATCHES):
+    """print all matches results and contestants in a tournament"""
+    print(50 * '-')
+    print('{0:<7s}{1:<10s}{2:<20s}{3:<20s}'.
+          format('Round', 'Result', 'Player1', 'Player2'))
+    print(50 * '-')
+    with conn:
+        result = c.execute(query)
+        for match in (result.fetchall()):
+            print('{0:<7d}{1:<10s}{2:<20s}{3:<20s}'.
+                  format(match[0], match[1], ' '.join(match[2:4]), ' '.join(match[4:6])))
