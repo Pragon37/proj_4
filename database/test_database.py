@@ -116,3 +116,17 @@ display_round(QUERY_ROUNDS.replace('tour_num', str(1)).replace('round_num', str(
 
 print(3 * '\n')
 display_match(QUERY_MATCHES.replace('tour_num', str(1)))
+
+
+update_player(1, 1233)
+update_player(2, 1377)
+
+display_ranked_player(QUERY_ONE_PLAYER.replace('player_num', str(1)))
+display_ranked_player(QUERY_ONE_PLAYER.replace('player_num', str(2)))
+
+print(get_table_size('player'))
+
+u = exist_player('Doe')
+print(u)
+v = exist_player('Yale')
+print(v)
