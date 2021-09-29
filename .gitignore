@@ -2,6 +2,7 @@
 env/
 database/__pycache__/
 chess.db
+sauv.db
 database/chess.db
 foo/
 foo1/
@@ -10,4 +11,3 @@ views-/
 controller/__pycache__/
 model/__pycache__/
 views/__pycache__/
-

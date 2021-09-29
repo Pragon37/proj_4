@@ -76,6 +76,12 @@ class Database():
             new_ranking = (ranking, player_id)
             self.c.execute("UPDATE player SET ranking = ? WHERE player_id = ?", new_ranking)
 
+    def update_match(self, match_id, result):
+        """Update match_id result"""
+        with self.conn:
+            new_result = (result, match_id)
+            self.c.execute("UPDATE matches SET result = ? WHERE match_id = ?", new_result)
+
     def insert_competitor(self, tour_id, player_id):
         """insert_competitors adds one player at a time to the competitors table"""
         with self.conn:
@@ -124,9 +130,10 @@ class Database():
                                     WHERE name = \"{tour_name}\"")
             return(name.fetchall())
 
-    def exist_competition(self, tour_name):
+    def exist_competition(self, tour_id):
         with self.conn:
-            name = self.c.execute("SELECT tour_id FROM competitors")
+            name = self.c.execute(f"SELECT player_id FROM competitors\
+                                    WHERE tour_id = {tour_id}")
             return(name.fetchall())
 
     def get_players(self):
@@ -173,7 +180,12 @@ class Database():
                                       player1.last_name,\
                                       player2.first_name,\
                                       player2.last_name,\
-                                      tournaments.name\
+                                      tournaments.name,\
+                                      player1.player_id,\
+                                      player2.player_id,\
+                                      player1.ranking,\
+                                      player2.ranking,\
+                                      match_id\
                                       FROM\
                                       matches\
                                       JOIN player AS player1 ON player1.player_id = matches.player1_id\
@@ -181,6 +193,51 @@ class Database():
                                       JOIN tournaments  ON tournaments.tour_id = matches.tour_id\
                                       WHERE matches.tour_id = {tour_num}")
             return(result.fetchall())
+
+    def get_unk_match(self):
+        """get all matches which result is unk and contestants in tournament tour_num"""
+        with self.conn:
+            result = self.c.execute(f"SELECT round,\
+                                      result,\
+                                      player1.first_name,\
+                                      player1.last_name,\
+                                      player2.first_name,\
+                                      player2.last_name,\
+                                      tournaments.name,\
+                                      player1.player_id,\
+                                      player2.player_id,\
+                                      player1.ranking,\
+                                      player2.ranking,\
+                                      match_id\
+                                      FROM\
+                                      matches\
+                                      JOIN player AS player1 ON player1.player_id = matches.player1_id\
+                                      JOIN player AS player2 ON player2.player_id = matches.player2_id\
+                                      JOIN tournaments  ON tournaments.tour_id = matches.tour_id\
+                                      WHERE matches.result = 'unk'")
+            return(result.fetchall())
+
+    def get_competitors(self, tour_num):
+        """return all the competitors sorted by name"""
+        with self.conn:
+            name = self.c.execute(f"SELECT player_id, first_name, last_name, ranking\
+                                     FROM player\
+                                     WHERE player_id\
+                                     IN\
+                                     (SELECT player_id FROM competitors WHERE tour_id = {tour_num})\
+                                     ORDER BY last_name, first_name")
+            return(name.fetchall())
+
+    def get_ranked_competitors(self, tour_num):
+        """return all the competitors sorted by rank. Suppose that competitors are already added"""
+        with self.conn:
+            name = self.c.execute(f"SELECT player_id, ranking\
+                                    FROM player\
+                                    WHERE player_id\
+                                    IN (SELECT player_id FROM competitors WHERE tour_id = {tour_num})\
+                                    ORDER BY ranking DESC, last_name, first_name")
+            return(name.fetchall())
+
 
 
 #    """query to get one player from his player_id """

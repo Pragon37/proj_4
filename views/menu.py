@@ -17,6 +17,8 @@ class Menu():
                  "Display Players",
                  "Display matches",
                  "Display scores",
+                 "Display competitors",
+                 "Add new round",
                  "Quit"]
 
     PLAYER_MENU = ["First name",
@@ -150,7 +152,7 @@ class Menu():
             tour_num = input(prompt)
         if tour_num.lower() == 'q':
             return
-        """Verif if already existing : To be done"""
+        """Early verif if already existing : To be done"""
         total_player = len(self.cont.display_player())
         prompt = "Enter 8 player id (1 <= id <= " + str(total_player) + ") separated by spaces or q:"
         competitors = input(prompt).split(' ')
@@ -198,8 +200,40 @@ class Menu():
             print("Competitors already enrolled for tournament: ", tour_num)
             print("\n")
 
-    def add_result():
+    def add_result(self):
         print("Add_result called\n")
+        matches = self.cont.display_unk_matches()
+        match = matches[1]
+        if matches[0] is True and len(match) != 0:
+            print(90 * '-')
+            print('{0:<20s}{1:<7s}{2:<10s}{3:<20s}{4:<20s}{5:<20s}'.
+                  format('Tour', 'Round', 'Result', 'Player1', 'Player2', 'match_id'))
+            print(90 * '-')
+            for i in range(0, len(match)):
+                print('{0:20s}{1:<7d}{2:<10s}{3:<20s}{4:<20s}{5:<7d}'.
+                      format(match[i][6], match[i][0], match[i][1], ' '.join(match[i][2:4]),
+                             ' '.join(match[i][4:6]), match[i][11]))
+            print("\n")
+        else:
+            print("\n")
+            print("No recorded matches for tour:", tour_id, "\n")
+            return
+        unk_list = []
+        for i in range(0, len(match)):
+            unk_list.append(match[i][11])
+        print(unk_list)
+        prompt = "Enter match_id in:" + str(unk_list) + " or q:"
+        match_id = input(prompt)
+        while not (match_id.lower() == 'q' or (re.match('^[0-9]+$', match_id) and int(match_id) in unk_list)):
+            match_id = input(prompt)
+        prompt = "Enter result (tie, pl1, pl2) for: " + str(match_id) + " or q:"
+        result = input(prompt)
+        possible_result = ['tie', 'pl1', 'pl2', 'unk']
+        while not(result.lower() in possible_result or result.lower() == 'q'):
+            result = input(prompt)
+        self.cont.update_match(match_id, result)
+
+        
 
     def display_players(self):
         name = input("Enter a(ll) / r(ranked) / player ID :")
@@ -260,6 +294,35 @@ class Menu():
             print("\n")
             return
 
+    def display_competitors(self):
+        print("Display_competirors called\n")
+        # Use the display_tour function to return the number of tour
+        result = self.cont.display_tour()
+        number_of_tour = result[1]
+        prompt = "Enter tournament id (<= " + str(number_of_tour) + ") :"
+        tour_id = input(prompt)
+        while not (tour_id.lower() == 'q' or re.match('^[0-9]+$', tour_id)):
+            tour_id = input(prompt)
+        if tour_id.lower() == 'q':
+            return
+        competitors = self.cont.display_competitors(tour_id)
+        if competitors[0] is True:
+            print("\n")
+            print(80 * '-')
+            print('{0:<5s}{1:<20s}{2:<5s}{3:<5s}'
+                  .format('Tid', 'Player', 'Pid', 'Ranking'))
+            print(80 * '-')
+            for i in range(0, len(competitors[1])):
+                print('{0:<5s}{1:<20s}{2:<5d}{3:<5d}'
+                      .format(tour_id, ' '.join(competitors[1][i][1:3]), competitors[1][i][0], competitors[1][i][3]))
+            print(80 * '-')
+            print("\n")
+        else:
+            print("\n")
+            print("No recorded competitors for tournament: ", tour_id)
+            print("\n")
+            return
+
     def display_matches(self):
         print("Display_matches called\n")
         # Use the display_tour function to return the number of tour
@@ -274,13 +337,14 @@ class Menu():
         matches = self.cont.display_matches(tour_id)
         match = matches[1]
         if matches[0] is True and len(match) != 0:
-            print(70 * '-')
-            print('{0:<20s}{1:<7s}{2:<10s}{3:<20s}{4:<20s}'.
-                  format('Tour', 'Round', 'Result', 'Player1', 'Player2'))
-            print(70 * '-')
+            print(90 * '-')
+            print('{0:<20s}{1:<7s}{2:<10s}{3:<20s}{4:<20s}{5:<20s}'.
+                  format('Tour', 'Round', 'Result', 'Player1', 'Player2', 'match_id'))
+            print(90 * '-')
             for i in range(0, len(match)):
-                print('{0:20s}{1:<7d}{2:<10s}{3:<20s}{4:<20s}'.
-                      format(match[i][6], match[i][0], match[i][1], ' '.join(match[i][2:4]), ' '.join(match[i][4:6])))
+                print('{0:20s}{1:<7d}{2:<10s}{3:<20s}{4:<20s}{5:<7d}'.
+                      format(match[i][6], match[i][0], match[i][1], ' '.join(match[i][2:4]),
+                             ' '.join(match[i][4:6]), match[i][11]))
             print("\n")
         else:
             print("\n")
@@ -297,38 +361,18 @@ class Menu():
             tour_id = input(prompt)
         if tour_id.lower() == 'q':
             return
-        matches = self.cont.display_matches(tour_id)
-        match = matches[1]
-        score_dict = {}
-        score1 = 0
-        score2 = 0
-        if matches[0] is True and len(match) != 0:
-            for i in range(0, len(match)):
-                player1 = ' '.join(match[i][2:4])
-                player2 = ' '.join(match[i][4:6])
-                if player1 not in score_dict:
-                    score_dict[player1] = 0
-                if player2 not in score_dict:
-                    score_dict[player2] = 0
-                if match[i][1] == 'tie':
-                    score1 = 0.5
-                    score2 = 0.5
-                elif match[i][1] == 'pl1':
-                    score1 = 1
-                    score2 = 0
-                elif match[i][1] == 'pl2':
-                    score1 = 0
-                    score2 = 1
-                score_dict[player1] += score1
-                score_dict[player2] += score2
-            print(70 * '-')
-            print('{0:<5s}{1:<20s}{2:<5s}'.format('Tour', 'Player', 'Score'))
-            for key in score_dict.keys():
-                print('{0:<5s}{1:<20s}{2:<.1f}'.format(tour_id, key, score_dict[key]))
-            print(70 * '-')
-        else:
+        round_status = self.cont.make_status(tour_id)
+        if round_status[0] is False:
             print("\n")
             print("No recorded matches for tour:", tour_id, "\n")
+        else:
+            sorted_summary = round_status[1]
+            print(70 * '-')
+            print('{0:<5s}{1:<7s}{2:<7s}{3:<20s}{4:<7s}{5:<10s}{6:<7s}'.format('Tour', 'Round', 'Played', 'Player',
+                                                                               'Pid', 'Score', 'Ranking'))
+            for val in sorted_summary:
+                print('{0:<5s}{1:<7d}{2:<7d}{3:<20s}{4:<7d}{5:<10.1f}{6:<4d}'.format(tour_id, val[2], val[1], val[3], val[4], val[0], val[5]))
+            print(70 * '-')
 
     def display_round(self):
         print("Display_round called\n")
@@ -360,9 +404,30 @@ class Menu():
             print("\n")
             print("No recorded round for tour:", tour_num, " round: ", round_num, "\n")
 
+    def add_new_round(self):
+        result = self.cont.display_tour()
+        number_of_tour = result[1]
+        prompt = "Enter tournament id (<= " + str(number_of_tour) + ") :"
+        tour_id = input(prompt)
+        while not (tour_id.lower() == 'q' or re.match('^[0-9]+$', tour_id)):
+            tour_id = input(prompt)
+        if tour_id.lower() == 'q':
+            return
+        round = self.cont.add_round(tour_id)
+        print("Round: ", round)
+        if round['Competitor_added'] is False:
+            print("No competitors for tour :", tour_id, " Add competitors")
+        elif round['Round_number'] == 0:
+            print("First round : create matches, matching competitors using rank")
+        elif round['Round_number'] != 0 and round['Round_complete'] is True:
+            print("To be completed")
+        elif round['Round_number'] != 0 and round['Round_complete'] is False:
+            print("Need to complete round before new round is started")
+
     def quit(self):
         print("quit called\n")
 
+    """
     MENU_DICT = {1: add_player,
                  2: add_tournament,
                  3: add_competitors,
@@ -372,6 +437,7 @@ class Menu():
                  7: display_players,
                  8: display_matches,
                  9: quit}
+    """
 
     def display_menu(self, choices):
         """display menu choices"""
@@ -388,7 +454,7 @@ class Menu():
         """execute the requested menu item"""
         # Executes the request action
         selection = 0
-        while selection != 10:
+        while selection != 12:
             selection = self.display_menu(self.MAIN_MENU)
             """#self.MENU_DICT.get(selection, None)()"""
             if selection == 1:
@@ -409,5 +475,9 @@ class Menu():
                 self.display_matches()
             elif selection == 9:
                 self.display_scores()
-            elif selection == '10':
+            elif selection == 10:
+                self.display_competitors()
+            elif selection == 11:
+                self.add_new_round()
+            elif selection == 12:
                 self.quit()
