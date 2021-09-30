@@ -1,5 +1,5 @@
 """This file contains the database definition.It consists of 4 tables : players, competitors,
-   matches, tournaments"""
+   matches, tournaments. It contains all the interface layer with sqlite database"""
 import sqlite3
 
 
@@ -113,24 +113,28 @@ class Database():
                             'date': date})
 
     def get_player(self, player_id):
+        """Retrieve player data for player_id"""
         with self.conn:
             name = self.c.execute(f"SELECT player_id, first_name, last_name, birth_date, sex, ranking FROM player\
                                     WHERE player_id == {player_id}")
             return(name.fetchone())
 
     def exist_player(self, last_name):
+        """Checks if player with last_name exists"""
         with self.conn:
             name = self.c.execute(f"SELECT first_name, last_name FROM player\
                                     WHERE last_name = \"{last_name}\"")
             return(name.fetchall())
 
     def exist_tour(self, tour_name):
+        """Checks if  tour = tour_name exists"""
         with self.conn:
             name = self.c.execute(f"SELECT name FROM tournaments\
                                     WHERE name = \"{tour_name}\"")
             return(name.fetchall())
 
     def exist_competition(self, tour_id):
+        """Checks if competitors have been added for tour = tour_id"""
         with self.conn:
             name = self.c.execute(f"SELECT player_id FROM competitors\
                                     WHERE tour_id = {tour_id}")
@@ -197,24 +201,24 @@ class Database():
     def get_unk_match(self):
         """get all matches which result is unk and contestants in tournament tour_num"""
         with self.conn:
-            result = self.c.execute(f"SELECT round,\
-                                      result,\
-                                      player1.first_name,\
-                                      player1.last_name,\
-                                      player2.first_name,\
-                                      player2.last_name,\
-                                      tournaments.name,\
-                                      player1.player_id,\
-                                      player2.player_id,\
-                                      player1.ranking,\
-                                      player2.ranking,\
-                                      match_id\
-                                      FROM\
-                                      matches\
-                                      JOIN player AS player1 ON player1.player_id = matches.player1_id\
-                                      JOIN player AS player2 ON player2.player_id = matches.player2_id\
-                                      JOIN tournaments  ON tournaments.tour_id = matches.tour_id\
-                                      WHERE matches.result = 'unk'")
+            result = self.c.execute("SELECT round,\
+                                     result,\
+                                     player1.first_name,\
+                                     player1.last_name,\
+                                     player2.first_name,\
+                                     player2.last_name,\
+                                     tournaments.name,\
+                                     player1.player_id,\
+                                     player2.player_id,\
+                                     player1.ranking,\
+                                     player2.ranking,\
+                                     match_id\
+                                     FROM\
+                                     matches\
+                                     JOIN player AS player1 ON player1.player_id = matches.player1_id\
+                                     JOIN player AS player2 ON player2.player_id = matches.player2_id\
+                                     JOIN tournaments  ON tournaments.tour_id = matches.tour_id\
+                                     WHERE matches.result = 'unk'")
             return(result.fetchall())
 
     def get_competitors(self, tour_num):
@@ -237,31 +241,3 @@ class Database():
                                     IN (SELECT player_id FROM competitors WHERE tour_id = {tour_num})\
                                     ORDER BY ranking DESC, last_name, first_name")
             return(name.fetchall())
-
-
-
-#    """query to get one player from his player_id """
-#    QUERY_ONE_PLAYER = """SELECT player_id, last_name, first_name, ranking
-#                          FROM player
-#                          WHERE player_id = player_num"""
-#
-#
-#    """query to get the competitors(group of players participant in a tournament) sorted by names"""
-#    QUERY_COMPETITORS = """SELECT player_id, last_name, first_name
-#                           FROM player
-#                           WHERE player_id
-#                           IN
-#                           (SELECT player_id FROM competitors WHERE tour_id = num)
-#                           ORDER BY last_name, first_name"""
-#
-#    """query to get the competitors(group of players participant in a tournament) sorted by ranking"""
-#    QUERY_RANKED_COMPETITORS = """SELECT player_id, last_name, first_name, ranking
-#                                  FROM player
-#                                  WHERE player_id
-#                                  IN (SELECT player_id FROM competitors WHERE tour_id = num)
-#                                  ORDER BY ranking, last_name, first_name"""
-#
-#
-#
-#
-#

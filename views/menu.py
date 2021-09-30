@@ -1,4 +1,6 @@
-"""This class consists of the the Menu handling"""
+"""This class consists of the the Menu handling.It does some syntactic analysis to accept the user request, and format
+the data that are returned to be dsplayed. It does not process data other than to check it is relevant with regards to
+the type of data that is required for the entry"""
 import re
 from datetime import datetime
 import sys
@@ -19,13 +21,8 @@ class Menu():
                  "Display scores",
                  "Display competitors",
                  "Add new round",
+                 "Update ranking",
                  "Quit"]
-
-    PLAYER_MENU = ["First name",
-                   "Last name",
-                   "Birth date",
-                   "Sex",
-                   "Ranking"]
 
     def __init__(self, cont):
         """ """
@@ -38,11 +35,12 @@ class Menu():
             try:
                 value = int(input(prompt))
                 break
-            except:
+            except ValueError:
                 pass
         return value
 
     def validate_name(name):
+        """Put constraints of first_name, last_name: Allows for letters, dash and single quote"""
         result = re.match('^[a-zA-Z]+[a-zA-Z -\']*[A-Za-z]+$', name)
         if result:
             return True
@@ -50,6 +48,7 @@ class Menu():
             return False
 
     def validate_date(date):
+        """Checks the date format: yyyy-mm-dd"""
         try:
             datetime.strptime(date, '%Y-%m-%d')
             return True
@@ -57,12 +56,14 @@ class Menu():
             return False
 
     def validate_sex(sex):
+        """Gender can be M/m or F/f"""
         if sex.upper() == 'M' or sex.upper() == 'F':
             return True
         else:
             return False
 
     def validate_ranking(ranking):
+        """Ranking is number comprised between 1000 and 3000"""
         if ranking.isdigit():
             if int(ranking) >= 1000 and int(ranking) <= 3000:
                 return True
@@ -72,6 +73,8 @@ class Menu():
             return False
 
     def add_player(self):
+        """Successively ask for first_name,last_name,birth_date,sexa nd ranking.
+        If data qualified for what it takes, pass it to the controller"""
         first_name = input("Enter player first name:")
         while not Menu.validate_name(first_name) and first_name != 'q':
             print("First name should be an alphabetic string")
@@ -116,7 +119,52 @@ class Menu():
             print("Cannot add existing player: ", first_name, last_name)
             print("\n")
 
+    def change_ranking(self):
+        """Ask for player_id, if this exists display player data and ask for new ranking"""
+        total_player = len(self.cont.display_player())
+        prompt = "Enter player id (1 <= id <= " + str(total_player) + ") or q:"
+        player_id = input(prompt)
+        done = False
+        while not done:
+            if player_id.lower() == 'q':
+                return
+            if not re.match('^[0-9]+$', player_id):
+                """Check if a number"""
+                print("Player_id: ", player_id, " is not a valid id.")
+                player_id = input(prompt)
+                done = False
+            elif int(player_id) < 1 or int(player_id) > total_player:
+                """Check if player_id id exists"""
+                print("Player id", player_id, " does not exist")
+                player_id = input(prompt)
+                done = False
+            else:
+                done = True
+            result = self.cont.display_one_player(player_id)
+            if result[0] is True:
+                print("\n")
+                print(80 * '-')
+                print('{0:<5s}{1:<20s}{2:<20s}{3:<20s}{4:<5s}{5:20s}'
+                      .format('Pid', 'first_name', 'last_name', 'birth_date', 'sex',  'Ranking'))
+                print(80 * '-')
+                print('{0:<5d}{1:<20s}{2:<20s}{3:<20s}{4:<5s}{5:4d}'
+                      .format(result[2][0], result[2][1], result[2][2], result[2][3], result[2][4], result[2][5]))
+                print(80 * '-')
+                print("\n")
+            else:
+                print("\n")
+                print("Player id should be <=  ", result[1], "\n")
+                return
+        ranking = input("Enter ranking (nnnn):")
+        while (not Menu.validate_ranking(ranking) and ranking != 'q'):
+            print("Ranking should be 1000 <= ranking <= 3000")
+            ranking = input("Enter ranking (nnnn):")
+        if ranking.lower() == 'q':
+            return
+        self.cont.update_player(player_id, ranking)
+
     def add_tournament(self):
+        """Ask for qualified tou name, tour venue and date"""
         name = input("Enter tournament name:")
         while not len(name) != 0 and name.lower() != 'q':
             name = input("Enter tournament name:")
@@ -143,6 +191,7 @@ class Menu():
             print("\n")
 
     def add_competitors(self):
+        """Ask for tour id and a list of 8 players id. Add the list to the tour if it does not exist yet"""
         print("Add_competitors called\n")
         result = self.cont.display_tour()
         number_of_tour = result[1]
@@ -201,6 +250,8 @@ class Menu():
             print("\n")
 
     def add_result(self):
+        """After a new round is added, the matches results are unknown. When the results are available,
+        the are entered with this menu item.It successively asks for player id and result (tie,pl1 or pl2)"""
         print("Add_result called\n")
         matches = self.cont.display_unk_matches()
         match = matches[1]
@@ -216,7 +267,7 @@ class Menu():
             print("\n")
         else:
             print("\n")
-            print("No recorded matches for tour:", tour_id, "\n")
+            print("All matches results have already been recorded", "\n")
             return
         unk_list = []
         for i in range(0, len(match)):
@@ -233,9 +284,8 @@ class Menu():
             result = input(prompt)
         self.cont.update_match(match_id, result)
 
-        
-
     def display_players(self):
+        """Display all players or all ranked players or all data for one player identified by its id"""
         name = input("Enter a(ll) / r(ranked) / player ID :")
         while not (re.match('^[arq]$', name.lower()) or re.match('^[0-9]+$', name)):
             name = input("Enter a(ll) / r(ranked) / player ID :")
@@ -276,6 +326,7 @@ class Menu():
                 return
 
     def display_tournament(self):
+        """Display all tournaments data"""
         result = self.cont.display_tour()
         if result[0] is True:
             print("\n")
@@ -295,7 +346,8 @@ class Menu():
             return
 
     def display_competitors(self):
-        print("Display_competirors called\n")
+        """Ask for tour_id and displays enrolled competitors if any"""
+        print("Display_competitors called\n")
         # Use the display_tour function to return the number of tour
         result = self.cont.display_tour()
         number_of_tour = result[1]
@@ -324,6 +376,7 @@ class Menu():
             return
 
     def display_matches(self):
+        """Ask for tour_id and display all matches that have been played or to be played for this tour"""
         print("Display_matches called\n")
         # Use the display_tour function to return the number of tour
         result = self.cont.display_tour()
@@ -371,10 +424,12 @@ class Menu():
             print('{0:<5s}{1:<7s}{2:<7s}{3:<20s}{4:<7s}{5:<10s}{6:<7s}'.format('Tour', 'Round', 'Played', 'Player',
                                                                                'Pid', 'Score', 'Ranking'))
             for val in sorted_summary:
-                print('{0:<5s}{1:<7d}{2:<7d}{3:<20s}{4:<7d}{5:<10.1f}{6:<4d}'.format(tour_id, val[2], val[1], val[3], val[4], val[0], val[5]))
+                print('{0:<5s}{1:<7d}{2:<7d}{3:<20s}{4:<7d}{5:<10.1f}{6:<4d}'.
+                      format(tour_id, val[2], val[1], val[3], val[4], val[0], val[5]))
             print(70 * '-')
 
     def display_round(self):
+        """Ask for tour id and round id and displays the contenders and results"""
         print("Display_round called\n")
         result = self.cont.display_tour()
         number_of_tour = result[1]
@@ -405,6 +460,7 @@ class Menu():
             print("No recorded round for tour:", tour_num, " round: ", round_num, "\n")
 
     def add_new_round(self):
+        """ask for a tour id and adds all matches template with results unknown"""
         result = self.cont.display_tour()
         number_of_tour = result[1]
         prompt = "Enter tournament id (<= " + str(number_of_tour) + ") :"
@@ -454,7 +510,7 @@ class Menu():
         """execute the requested menu item"""
         # Executes the request action
         selection = 0
-        while selection != 12:
+        while selection != len(self.MAIN_MENU):
             selection = self.display_menu(self.MAIN_MENU)
             """#self.MENU_DICT.get(selection, None)()"""
             if selection == 1:
@@ -480,4 +536,6 @@ class Menu():
             elif selection == 11:
                 self.add_new_round()
             elif selection == 12:
+                self.change_ranking()
+            elif selection == 13:
                 self.quit()
