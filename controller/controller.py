@@ -119,12 +119,15 @@ class Controller:
                     """Match not yet played.Score unchanged."""
                     score1 = 0
                     score2 = 0
+                    played = match[i][0] - 1
                 score1 += score_dict[player1][0]
                 score2 += score_dict[player2][0]
                 score_dict[player1] = (score1, played, round_num, player1, player1_id, player1_rk)
+                print(score_dict[player1])
                 score_dict[player2] = (score2, played, round_num, player2, player2_id, player2_rk)
+                print(score_dict[player2])
                 round_summary = list(score_dict.values())
-                sorted_summary = sorted(round_summary, key=itemgetter(0,5,3))
+                sorted_summary = sorted(round_summary, key=itemgetter(0,5,3), reverse=True)
             return (True,sorted_summary)
         else:
             return(False, [])
@@ -134,7 +137,7 @@ class Controller:
         print(round_status)
         print(round_status[0])
         print(round_status[1])
-        """Round_complete is True is the round is complete,  Competitor_added is True if there are competitors"""
+        """Round_complete is True if the round is complete,  Competitor_added is True if there are competitors"""
         round = {'Round_number': 0, 'Round_complete': True, 'Competitor_added':False}
         print("Round status:000000")
         """No round added yet"""
@@ -168,6 +171,9 @@ class Controller:
 
     def add_round(self, tour_id):
         round = Controller.get_round(self, tour_id)
+        list_of_match_played = []
+        list_player_score_rank = []
+        list_new_matches = []
         if round['Competitor_added'] is False:
             """No competitors added : return request to add competitors"""
             return round
@@ -180,9 +186,64 @@ class Controller:
             return round
         elif round['Round_number'] != 0 and round['Round_complete'] is True:
             round_status = Controller.make_status(self, tour_id)
+            for item in round_status[1]:
+                """list element = (player_id, score, ranking)"""
+                list_player_score_rank.append((item[4], item[0], item[5]))
+            print(list_player_score_rank)
             """Need all matches already played and round scores"""
             """round_status[1] contains ordered by score,ranking : score, played,
             round_num, player, player_id, player_rk for the 8 players"""
+            matches = self.db.get_match(tour_id)
+            """Extract a list of match already played: For a match P1_id vs P2_id add to the list (P1_id, P2_id)"""
+            for item in matches:
+                """Sanity check"""
+                if item[1] == 'unk':
+                    Print("Round not completed : programming Error!!!")
+                else:
+                    list_of_match_played.append((item[7], item[8]))
+                    print("list_of_match_played: ",list_of_match_played)
+            """Now we have got the list of match played and the list of scores:
+                To create the list of new matches iterate player in list_player_score_rank,
+                check if already enrolled in the new round, if not add player in pair, when pair complete
+                check if pair has already played, if not add to new list otherwise replace players with 
+                next player in the list ranked by score and ranking"""
+            pair = []
+            print("list_new_matches: ", list_new_matches)
+            while len(list_new_matches) != int(len(list_player_score_rank) / 2):
+                for player in list_player_score_rank:
+                    """Check if player already engaged.Skip for loop if list_new_matches empty"""
+                    player_engaged = False
+                    for matches in list_new_matches:
+                        if player[0] in matches:
+                            player_engaged = True
+                            break
+                    if player_engaged is False:
+                        if len(pair) == 0:
+                            """Add first player"""
+                            pair.append(player[0])
+                        elif len(pair) == 1:
+                            """Add second player"""
+                            pair.append(player[0])
+                        else:
+                            Print("Pair complete : programming Error!!!")
+                    if len(pair) == 2:
+                        """A candidate pair has been found.Need checking if the pair already played"""
+                        print("pair: ", pair)
+                        pair12 = (pair[0], pair[1])
+                        pair21  =(pair[1], pair[0])
+                        if pair12 in list_of_match_played or pair21 in list_of_match_played:
+                            """Pair has already played, select another player2"""
+                            print("Pair already found: ", pair12)
+                            pair = [pair[0],]
+                        else:
+                            list_new_matches.append(pair)
+                            pair = []
+                            print("list_of_new_matches: ", list_new_matches)
+                            break
+
+            for match in list_new_matches:
+                """Create matches"""
+                self.db.insert_match('unk', round['Round_number'] + 1, tour_id, match[0],match[1])
             return round
         elif round['Round_number'] != 0 and round['Round_complete'] is False:
             """Return request to complete to complete round"""
