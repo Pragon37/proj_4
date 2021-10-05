@@ -48,9 +48,9 @@ class Database():
     """Records the tournaments list. Consists of tournament name, venue and date"""
     QUERY_TOURNAMENTS_TABLE = """CREATE TABLE IF NOT EXISTS tournaments (
                                 tour_id        INTEGER PRIMARY KEY,
-                                name           TEXT NOT NULL,
-                                venue          TEXT NOT NULL UNIQUE,
-                                date           TEXT NOT NULL UNIQUE
+                                name           TEXT NOT NULL UNIQUE,
+                                venue          TEXT NOT NULL,
+                                date           TEXT NOT NULL
                                 )"""
 
     def create_table(self, query):
@@ -68,31 +68,22 @@ class Database():
             self.c.execute("INSERT INTO player VALUES (NULL, :first_name, :last_name, :birth_date, :sex, :ranking)",
                            {'first_name': first_name, 'last_name': last_name, 'birth_date': birth_date, 'sex': sex,
                             'ranking': ranking})
-        print("New Player inserted")
 
     def update_player(self, player_id, ranking):
         """Update player ranking"""
         with self.conn:
-            new_ranking = (ranking, player_id)
-            self.c.execute("UPDATE player SET ranking = ? WHERE player_id = ?", new_ranking)
+            self.c.execute("UPDATE player SET ranking = ? WHERE player_id = ?", (ranking, player_id))
 
     def update_match(self, match_id, result):
         """Update match_id result"""
         with self.conn:
-            new_result = (result, match_id)
-            self.c.execute("UPDATE matches SET result = ? WHERE match_id = ?", new_result)
+            self.c.execute("UPDATE matches SET result = ? WHERE match_id = ?", (result, match_id))
 
     def insert_competitor(self, tour_id, player_id):
         """insert_competitors adds one player at a time to the competitors table"""
         with self.conn:
             self.c.execute("INSERT INTO competitors VALUES (NULL, :tour_id, :player_id)",
                            {'tour_id': tour_id, 'player_id': player_id})
-
-    def get_player_name(self, player_id, tour_id):
-        """Reports name of a player from player_id"""
-        name_query = "SELECT first_name,last_name FROM player WHERE  player_id = " + str(player_id)
-        name = self.c.execute(name_query)
-        print(' '.join(name.fetchone()), ": Player already enrolled in tour : ", tour_id)
 
     def insert_match(self, result, round, tour_id, player1_id, player2_id):
         """Insert match result, round, tournament and match participant in the matches table"""
@@ -115,29 +106,29 @@ class Database():
     def get_player(self, player_id):
         """Retrieve player data for player_id"""
         with self.conn:
-            name = self.c.execute(f"SELECT player_id, first_name, last_name, birth_date, sex, ranking FROM player\
-                                    WHERE player_id == {player_id}")
+            name = self.c.execute("SELECT player_id, first_name, last_name, birth_date, sex, ranking FROM player\
+                                  WHERE player_id == :player_id", {'player_id': player_id})
             return(name.fetchone())
 
     def exist_player(self, last_name):
         """Checks if player with last_name exists"""
         with self.conn:
-            name = self.c.execute(f"SELECT first_name, last_name FROM player\
-                                    WHERE last_name = \"{last_name}\"")
+            name = self.c.execute("SELECT first_name, last_name FROM player\
+                                  WHERE last_name = :last_name", {'last_name': last_name})
             return(name.fetchall())
 
     def exist_tour(self, tour_name):
         """Checks if  tour = tour_name exists"""
         with self.conn:
-            name = self.c.execute(f"SELECT name FROM tournaments\
-                                    WHERE name = \"{tour_name}\"")
+            name = self.c.execute("SELECT name FROM tournaments\
+                                   WHERE name = :tour_name", {'tour_name': tour_name})
             return(name.fetchall())
 
     def exist_competition(self, tour_id):
         """Checks if competitors have been added for tour = tour_id"""
         with self.conn:
-            name = self.c.execute(f"SELECT player_id FROM competitors\
-                                    WHERE tour_id = {tour_id}")
+            name = self.c.execute("SELECT player_id FROM competitors\
+                                  WHERE tour_id = :tour_id", {'tour_id': tour_id})
             return(name.fetchall())
 
     def get_players(self):
@@ -167,35 +158,37 @@ class Database():
     def get_rounds(self, tour_num, round_num):
         """get all matches results and contestants in a round"""
         with self.conn:
-            result = self.c.execute(f"SELECT result, player1.first_name, player1.last_name, player2.first_name, player2.last_name\
-                                        FROM\
-                                        matches\
-                                        JOIN player AS player1 ON player1.player_id = matches.player1_id\
-                                        JOIN player AS player2 ON player2.player_id = matches.player2_id\
-                                        WHERE matches.tour_id == {tour_num} AND matches.round == {round_num}")
+            result = self.c.execute("SELECT result, player1.first_name, player1.last_name, player2.first_name, player2.last_name\
+                                     FROM\
+                                     matches\
+                                     JOIN player AS player1 ON player1.player_id = matches.player1_id\
+                                     JOIN player AS player2 ON player2.player_id = matches.player2_id\
+                                     WHERE matches.tour_id == :tour_num\
+                                     AND matches.round == :round_num",
+                                    {'tour_num': tour_num, 'round_num': round_num})
             return(result.fetchall())
 
     def get_match(self, tour_num):
         """get all matches results and contestants in tournament tour_num"""
         with self.conn:
-            result = self.c.execute(f"SELECT round,\
-                                      result,\
-                                      player1.first_name,\
-                                      player1.last_name,\
-                                      player2.first_name,\
-                                      player2.last_name,\
-                                      tournaments.name,\
-                                      player1.player_id,\
-                                      player2.player_id,\
-                                      player1.ranking,\
-                                      player2.ranking,\
-                                      match_id\
-                                      FROM\
-                                      matches\
-                                      JOIN player AS player1 ON player1.player_id = matches.player1_id\
-                                      JOIN player AS player2 ON player2.player_id = matches.player2_id\
-                                      JOIN tournaments  ON tournaments.tour_id = matches.tour_id\
-                                      WHERE matches.tour_id = {tour_num}")
+            result = self.c.execute("SELECT round,\
+                                     result,\
+                                     player1.first_name,\
+                                     player1.last_name,\
+                                     player2.first_name,\
+                                     player2.last_name,\
+                                     tournaments.name,\
+                                     player1.player_id,\
+                                     player2.player_id,\
+                                     player1.ranking,\
+                                     player2.ranking,\
+                                     match_id\
+                                     FROM\
+                                     matches\
+                                     JOIN player AS player1 ON player1.player_id = matches.player1_id\
+                                     JOIN player AS player2 ON player2.player_id = matches.player2_id\
+                                     JOIN tournaments  ON tournaments.tour_id = matches.tour_id\
+                                     WHERE matches.tour_id = :tour_num", {'tour_num': tour_num})
             return(result.fetchall())
 
     def get_unk_match(self):
@@ -224,20 +217,20 @@ class Database():
     def get_competitors(self, tour_num):
         """return all the competitors sorted by name"""
         with self.conn:
-            name = self.c.execute(f"SELECT player_id, first_name, last_name, ranking\
+            name = self.c.execute("SELECT player_id, first_name, last_name, ranking\
                                      FROM player\
                                      WHERE player_id\
                                      IN\
-                                     (SELECT player_id FROM competitors WHERE tour_id = {tour_num})\
-                                     ORDER BY last_name, first_name")
+                                     (SELECT player_id FROM competitors WHERE tour_id = :tour_num)\
+                                  ORDER BY last_name, first_name", {'tour_num': tour_num})
             return(name.fetchall())
 
     def get_ranked_competitors(self, tour_num):
         """return all the competitors sorted by rank. Suppose that competitors are already added"""
         with self.conn:
-            name = self.c.execute(f"SELECT player_id, ranking\
-                                    FROM player\
-                                    WHERE player_id\
-                                    IN (SELECT player_id FROM competitors WHERE tour_id = {tour_num})\
-                                    ORDER BY ranking DESC, last_name, first_name")
+            name = self.c.execute("SELECT player_id, ranking\
+                                   FROM player\
+                                   WHERE player_id\
+                                   IN (SELECT player_id FROM competitors WHERE tour_id = :tour_num)\
+                                   ORDER BY ranking DESC, last_name, first_name", {'tour_num': tour_num})
             return(name.fetchall())

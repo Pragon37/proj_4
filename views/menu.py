@@ -277,11 +277,15 @@ class Menu():
         match_id = input(prompt)
         while not (match_id.lower() == 'q' or (re.match('^[0-9]+$', match_id) and int(match_id) in unk_list)):
             match_id = input(prompt)
+        if match_id.lower() == 'q':
+            return
         prompt = "Enter result (tie, pl1, pl2) for: " + str(match_id) + " or q:"
         result = input(prompt)
         possible_result = ['tie', 'pl1', 'pl2', 'unk']
         while not(result.lower() in possible_result or result.lower() == 'q'):
             result = input(prompt)
+        if result.lower() == 'q':
+            return
         self.cont.update_match(match_id, result)
 
     def display_players(self):
