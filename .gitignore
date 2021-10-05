@@ -1,9 +1,8 @@
 *.swp
 env/
-database/__pycache__/
+database/
 chess.db
 sauv.db
-database/chess.db
 foo/
 foo1/
 odb/

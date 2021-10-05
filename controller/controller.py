@@ -22,7 +22,6 @@ class Controller:
     def check_add_tour(self, tour_name, venue, date):
         """Check that no existing tour (same name) is already recorded"""
         name = self.db.exist_tour(tour_name)
-        print("TOURNAME: ", name)
         for i in range(0, len(name)):
             if name[i][0] == tour_name:
                 return False

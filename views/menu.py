@@ -192,7 +192,6 @@ class Menu():
 
     def add_competitors(self):
         """Ask for tour id and a list of 8 players id. Add the list to the tour if it does not exist yet"""
-        print("Add_competitors called\n")
         result = self.cont.display_tour()
         number_of_tour = result[1]
         prompt = "Enter tournament id (<= " + str(number_of_tour) + ") :"
@@ -252,7 +251,6 @@ class Menu():
     def add_result(self):
         """After a new round is added, the matches results are unknown. When the results are available,
         the are entered with this menu item.It successively asks for player id and result (tie,pl1 or pl2)"""
-        print("Add_result called\n")
         matches = self.cont.display_unk_matches()
         match = matches[1]
         if matches[0] is True and len(match) != 0:
@@ -351,7 +349,6 @@ class Menu():
 
     def display_competitors(self):
         """Ask for tour_id and displays enrolled competitors if any"""
-        print("Display_competitors called\n")
         # Use the display_tour function to return the number of tour
         result = self.cont.display_tour()
         number_of_tour = result[1]
@@ -381,7 +378,6 @@ class Menu():
 
     def display_matches(self):
         """Ask for tour_id and display all matches that have been played or to be played for this tour"""
-        print("Display_matches called\n")
         # Use the display_tour function to return the number of tour
         result = self.cont.display_tour()
         number_of_tour = result[1]
@@ -408,7 +404,6 @@ class Menu():
             print("No recorded matches for tour:", tour_id, "\n")
 
     def display_scores(self):
-        print("Display_scores called\n")
         """ Use the display_tour function to return the number of tour"""
         result = self.cont.display_tour()
         number_of_tour = result[1]
@@ -434,7 +429,6 @@ class Menu():
 
     def display_round(self):
         """Ask for tour id and round id and displays the contenders and results"""
-        print("Display_round called\n")
         result = self.cont.display_tour()
         number_of_tour = result[1]
         prompt = "Enter tournament id (<= " + str(number_of_tour) + ") :"
@@ -474,7 +468,6 @@ class Menu():
         if tour_id.lower() == 'q':
             return
         round = self.cont.add_round(tour_id)
-        print("Round: ", round)
         if round['Competitor_added'] is False:
             print("No competitors for tour :", tour_id, " Add competitors")
         elif round['Round_number'] == 0:
