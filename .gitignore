@@ -1,6 +1,6 @@
 *.swp
 env/
-database/
+database.old/
 chess.db
 sauv.db
 foo/
